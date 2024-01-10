@@ -1,0 +1,4 @@
+先執行pong_game_socket.exe，然後開啟uart_receive.py接收資料。
+
+Python需安裝pyserial套件
+pip install pyserial

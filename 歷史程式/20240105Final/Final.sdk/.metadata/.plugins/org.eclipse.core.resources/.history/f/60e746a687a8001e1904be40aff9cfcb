@@ -1,0 +1,319 @@
+/*
+ * Empty C++ Application
+ */
+#include <stdio.h>
+//#include <platform.h>
+#include "xil_printf.h"
+#include "xparameters.h"
+#include "xgpio.h"
+#include "xscugic.h"
+#include "xuartps.h"
+
+using namespace std;
+
+#define Z700_INTC_ID	XPAR_PS7_SCUGIC_0_DEVICE_ID // for ZYNQ 700系列中斷編號
+#define BTN_ID	XPAR_AXI_GPIO_0_DEVICE_ID
+#define INTC_GPIO_ID XPAR_FABRIC_AXI_GPIO_0_IP2INTC_IRPT_INTR //GPIO中斷編號
+#define BTN_INT 		XGPIO_IR_CH1_MASK
+#define GIC_ID XPAR_SCUGIC_SINGLE_DEVICE_ID //通用中斷編號
+
+#define WIDTH 80
+#define HEIGHT 30
+#define PLAYER_1_BAR_X 4
+#define PLAYER_2_BAR_X WIDTH*2-6
+
+void initialize();
+
+struct Data	{
+	int BallX;
+	int BallY;
+	int Player1BarY;
+	int Player2BarY;
+	int Player1Score;
+	int Player2Score;
+};
+
+class Player {
+    class Bar {
+    	public:
+        	int x;
+            int y = HEIGHT / 2  - 2 ;
+
+        public:
+            void setX(int x) {
+            	this->x = x;
+			}
+            void up() {
+            	y--;
+            }
+            void down() {
+            	y++;
+            }
+            int getX() {
+            	return x;
+			}
+            int getY() {
+            	return y;
+			}
+    };
+
+	public:
+	    Bar bar;
+	    int score = 0;
+
+    public:
+    	Player(int x) {
+    		bar.setX(x);
+		}
+        int getScore() {
+        	return score;
+		}
+		void setScore(int score) {
+			this->score = score;
+		}
+    	int getBarYtop() {
+    		return bar.getY() - 2 + 2;
+		}
+		int getBarYbottom() {
+			return bar.getY() + 2 + 2;
+		}
+		int getBarYcenter() {
+			return bar.getY();
+		}
+		int getBarX() {
+			return bar.getX();
+		}
+		void barUp() {
+			if (getBarYtop() > 1) {
+				/*gotoxy(getBarX(), getBarYbottom());
+				cout << "  ";*/
+            	bar.up();
+            	/*gotoxy(getBarX(), getBarYtop());
+				cout << "█";*/
+			}
+        }
+        void barDown() {
+        	if (getBarYbottom() < HEIGHT - 2) {
+        		/*gotoxy(getBarX(), getBarYtop());
+				cout << "  ";*/
+            	bar.down();
+            	/*gotoxy(getBarX(), getBarYbottom());
+				cout << "█";*/
+            }
+        }
+        void goal() {
+        	score++;
+		}
+};
+
+Player player1(PLAYER_1_BAR_X);
+Player player2(PLAYER_2_BAR_X);
+
+class Ball{
+	public:
+		double x, y, moveX, moveY;
+		void ob() {
+			if (x > WIDTH * 2 - 3) { // right ob
+				player1.goal();
+				x = WIDTH;
+			}
+			if (x <= 2) { // left ob
+				player2.goal();
+				x = WIDTH;
+			}
+			if (player1.getScore() == 5 || player2.getScore() == 5) {
+				initialize();
+			}
+		}
+		void rebound() {
+			if (y > HEIGHT - 2) { // bottom
+				moveY *= -1;
+			}
+			if (y <= 2) { // top
+				moveY *= -1;
+			}
+			if ((x >= PLAYER_2_BAR_X - 2) && (y > player2.getBarYtop() && y <= player2.getBarYbottom())) { // right bar
+				moveX *= -1;
+			}
+			if ((x <= PLAYER_1_BAR_X + 2) && (y > player1.getBarYtop() && y <= player1.getBarYbottom())) { // left bar
+				moveX *= -1;
+			}
+		}
+
+	public:
+		void move() {
+			x += moveX;
+			y += moveY;
+			rebound();
+			ob();
+		}
+		void setMoveX(double moveX) {
+			this->moveX = moveX;
+		}
+		void setMoveY(double moveY) {
+			this->moveY = moveY;
+		}
+		int getX() {
+			return x;
+		}
+		int getY() {
+			return y;
+		}
+		void setX(int x) {
+			this->x = x;
+		}
+		void setY(int y) {
+			this->y = y;
+		}
+};
+
+Ball ball;
+
+void initialize() {
+    player1.setScore(0);
+    player2.setScore(0);
+    ball.setMoveX(-0.1);
+    ball.setMoveY(0.1);
+    ball.setX(30);
+    ball.setY(10);
+}
+
+XUartPs uart;
+
+int init_uart() {
+    XUartPs_Config *config = XUartPs_LookupConfig(XPAR_PS7_UART_1_DEVICE_ID);
+    if (config == NULL) {
+        return XST_FAILURE;
+    }
+
+    XUartPs_CfgInitialize(&uart, config, config->BaseAddress);
+    return XST_SUCCESS;
+}
+
+XGpio LED, BTN;
+XScuGic INTCInst;
+XScuGic_Config *IntcConfig;
+//static int LED_data, btn_value;
+void Intr_Handler();
+void Intr_Setup(XScuGic *GicInstancePtr, XGpio *GpioInstancePtr);
+void delay(int dly);
+int Btn_num = 0b00000000;
+int Btn[4] ;
+int Btn_p1d = 0;
+int Btn_p2d = 0;
+bool stop = false;
+//static int Intr_CTN;
+
+int main()
+{
+	XGpio_Initialize(&BTN, BTN_ID);
+	XGpio_SetDataDirection(&BTN, 1, 1);//通道1, 輸入
+	initialize();
+	init_uart();
+	int Btn_p1d = 0;
+	int Btn_p2d = 0;
+	bool stop = false;
+	//Intr_Setup(&INTCInst, &BTN);//中斷初始化
+	print("Init successful");
+
+	while(1)
+	{
+		Btn_num = XGpio_DiscreteRead(&BTN, 1);
+		ball.move();
+
+
+		/*Data Value;
+		Value.BallX = ball.x;
+		Value.BallY = ball.y;
+		Value.Player1BarY = player1.bar.y;
+		Value.Player2BarY = player2.bar.y;
+		Value.Player1Score = player1.score;
+		Value.Player2Score = player2.score;*/
+
+		printf("bx:%d,by:%d,p1y:%d,p2y:%d,p1s:%d,p2s:%d\n",static_cast<int>(ball.x),static_cast<int>(ball.y),player1.bar.y,player2.bar.y,player1.score,player2.score);
+
+		//delay(100);
+	}
+
+	return 0;
+}
+
+void Intr_Setup(XScuGic *GicInstancePtr, XGpio *GpioInstancePtr)
+{
+	IntcConfig = XScuGic_LookupConfig(GIC_ID);//尋找當前SOC的中斷配置
+	XScuGic_CfgInitialize(&INTCInst, IntcConfig, IntcConfig->CpuBaseAddress);//初始化設定當前SOC的中斷配置
+
+	Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_INT,(Xil_ExceptionHandler)XScuGic_InterruptHandler, GicInstancePtr);//新增中斷處理程序
+	Xil_ExceptionEnableMask(XIL_EXCEPTION_IRQ);//SOC中斷啟用
+
+	XScuGic_Connect(GicInstancePtr, INTC_GPIO_ID, (Xil_ExceptionHandler)Intr_Handler, (void *)GpioInstancePtr);//連結中斷、GPIO中斷、特定程式、GPIO腳位
+	XScuGic_Enable(GicInstancePtr, INTC_GPIO_ID);//使中斷控制能接受特定GPIO中斷
+	XGpio_InterruptGlobalEnable(GpioInstancePtr);//使GPIO能夠中斷
+	XGpio_InterruptEnable(&BTN, BTN_INT);//開啟GPIO中斷
+}
+
+void Intr_Handler()
+{
+	XGpio_InterruptDisable(&BTN, BTN_INT);//關閉中斷
+	XGpio_InterruptClear(&BTN, BTN_INT);//中斷標誌清除
+	Btn_num = XGpio_DiscreteRead(&BTN, 1);
+	for (int i = 0; i < 5; ++i) {
+		Btn[i] = Btn_num & (1 << i);
+		//printf("Button %d is pressed.\n", Btn[i]);
+	}
+	if(Btn[0] == 1 && stop == false){
+		if (Btn[2] == 4 && Btn[1] == 0) {
+					if(Btn_p1d == 0){
+						print("p1 moves up.");
+						player1.barUp();
+						Btn_p1d = 1;
+					}
+				}
+				else if (Btn[2] == 0 && Btn[1] == 2) {
+					if(Btn_p1d == 0){
+						print("p1 moves down.");
+						player1.barDown();
+						Btn_p1d = 1;
+					}
+				}
+				else{
+					Btn_p1d = 0;
+				}
+				if (Btn[4] == 16 && Btn[3] == 0) {
+					if(Btn_p2d == 0){
+						print("p2 moves up.");
+						player2.barUp();
+						Btn_p2d = 1;
+					}
+				} else if (Btn[4] == 0 && Btn[3] == 8) {
+					if(Btn_p2d == 0){
+						print("p2 moves down.");
+						player2.barDown();
+						Btn_p2d = 1;
+					}
+				}
+				else{
+					Btn_p2d = 0;
+				}
+	}
+	else{
+		stop = !stop;
+		delay(500);
+		while(stop)
+			if(Btn[0] == 1){
+				stop = !stop;
+			}
+		delay(300);
+	}
+	XGpio_InterruptEnable(&BTN, BTN_INT);//開啟特定GPIO通道中斷
+}
+
+void delay(int dly)
+{
+	int i, j;
+	for(i = 0;i < dly;i ++){
+		for (j = 0;j <0xffff; j++){
+			;
+		}
+	}
+}

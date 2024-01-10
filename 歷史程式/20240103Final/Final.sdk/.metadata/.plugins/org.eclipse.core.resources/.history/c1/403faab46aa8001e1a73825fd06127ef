@@ -1,0 +1,108 @@
+/*
+ * Empty C++ Application
+ */
+#include <stdio.h>
+//#include <platform.h>
+#include "xil_printf.h"
+#include "xparameters.h"
+#include "xgpio.h"
+#include "xscugic.h"
+using namespace std;
+
+#define Z700_INTC_ID	XPAR_PS7_SCUGIC_0_DEVICE_ID // for ZYNQ 700系列中斷編號
+#define BTN_ID	XPAR_AXI_GPIO_0_DEVICE_ID
+#define INTC_GPIO_ID XPAR_FABRIC_AXI_GPIO_0_IP2INTC_IRPT_INTR //GPIO中斷編號
+#define BTN_INT 		XGPIO_IR_CH1_MASK
+#define GIC_ID XPAR_SCUGIC_SINGLE_DEVICE_ID //通用中斷編號
+
+XGpio LED, BTN;
+XScuGic INTCInst;
+XScuGic_Config *IntcConfig;
+//static int LED_data, btn_value;
+void Intr_Handler();
+void Intr_Setup(XScuGic *GicInstancePtr, XGpio *GpioInstancePtr);
+void delay(int dly);
+int Btn_num = 0b00000000;
+int Btn[4] ;
+static int Intr_CTN;
+
+int main()
+{
+	XGpio_Initialize(&BTN, BTN_ID);
+	XGpio_SetDataDirection(&BTN, 1, 1);//通道1, 輸入
+
+	//Intr_Setup(&INTCInst, &BTN);//中斷初始化
+	print("Init successful");
+
+	while(1)
+	{
+		Btn_num = XGpio_DiscreteRead(&BTN, 1);
+		//printf("Btn_num :%x\n",Btn_num);
+		//delay(500);
+		//print("B\n");
+		for (int i = 0; i < 5; ++i) {
+			Btn[i] = Btn_num & (1 << i);
+			//printf("Button %d is pressed.\n", Btn[i]);
+		}
+
+		if (Btn[2] == 4 && Btn[1] == 0) {
+			print("p1 moves up.");
+		} else if (Btn[2] == 0 && Btn[1] == 2) {
+			print("p1 moves down.");
+		} else {
+			}
+
+		if (Btn[4] == 16 && Btn[3] == 0) {
+			print("p2 moves up.");
+		} else if (Btn[4] == 0 && Btn[3] == 8) {
+			print("p2 moves down.");
+		} else {
+		    }
+
+		delay(500);
+	}
+
+	return 0;
+}
+/*
+void Intr_Setup(XScuGic *GicInstancePtr, XGpio *GpioInstancePtr)
+{
+	IntcConfig = XScuGic_LookupConfig(GIC_ID);//尋找當前SOC的中斷配置
+	XScuGic_CfgInitialize(&INTCInst, IntcConfig, IntcConfig->CpuBaseAddress);//初始化設定當前SOC的中斷配置
+
+	Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_INT,(Xil_ExceptionHandler)XScuGic_InterruptHandler, GicInstancePtr);//新增中斷處理程序
+	Xil_ExceptionEnableMask(XIL_EXCEPTION_IRQ);//SOC中斷啟用
+
+	XScuGic_Connect(GicInstancePtr, INTC_GPIO_ID, (Xil_ExceptionHandler)Intr_Handler, (void *)GpioInstancePtr);//連結中斷、GPIO中斷、特定程式、GPIO腳位
+	XScuGic_Enable(GicInstancePtr, INTC_GPIO_ID);//使中斷控制能接受特定GPIO中斷
+	XGpio_InterruptGlobalEnable(GpioInstancePtr);//使GPIO能夠中斷
+	XGpio_InterruptEnable(&BTN, BTN_INT);//開啟GPIO中斷
+}
+
+void Intr_Handler()
+{
+	XGpio_InterruptDisable(&BTN, BTN_INT);//關閉中斷
+	XGpio_InterruptClear(&BTN, BTN_INT);//中斷標誌清除
+	Btn_num = XGpio_DiscreteRead(&BTN, 1);
+	delay(500);//延遲0.5秒代替防彈跳
+
+
+
+	Intr_CTN++;
+	printf("Interrupt :%x\n",Intr_CTN);
+	printf("Btn_num :%x\n",Btn_num);
+
+	delay(2000);//延遲當前LED燈2秒
+
+	XGpio_InterruptEnable(&BTN, BTN_INT);//開啟特定GPIO通道中斷
+}
+*/
+void delay(int dly)
+{
+	int i, j;
+	for(i = 0;i < dly;i ++){
+		for (j = 0;j <0xffff; j++){
+			;
+		}
+	}
+}

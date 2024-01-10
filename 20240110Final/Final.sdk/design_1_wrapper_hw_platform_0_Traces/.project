@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>design_1_wrapper_hw_platform_0_Traces</name>
+	<comment></comment>
+	<projects>
+	</projects>
+	<buildSpec>
+	</buildSpec>
+	<natures>
+		<nature>org.eclipse.linuxtools.tmf.project.nature</nature>
+	</natures>
+	<linkedResources>
+		<link>
+			<name>Traces/Run_一月-10_18-13/PS_Trace_一月-10_18-13/PS_Trace_一月-10_18-13_</name>
+			<type>1</type>
+			<location>C:/Users/user/Desktop/SoC/20240109-3Final/Final.sdk/design_1_wrapper_hw_platform_0_Traces/Traces/.bookmarks</location>
+		</link>
+	</linkedResources>
+</projectDescription>

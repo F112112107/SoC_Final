@@ -1,0 +1,23 @@
+16:52:18 **** Incremental Build of configuration Debug for project Final ****
+make pre-build main-build 
+a9-linaro-pre-build-step
+' '
+'Building file: ../src/main.cc'
+'Invoking: ARM v7 g++ compiler'
+arm-none-eabi-g++ -Wall -O0 -g3 -c -fmessage-length=0 -MT"src/main.o" -mcpu=cortex-a9 -mfpu=vfpv3 -mfloat-abi=hard -I../../Final_bsp/ps7_cortexa9_0/include -MMD -MP -MF"src/main.d" -MT"src/main.o" -o "src/main.o" "../src/main.cc"
+'Finished building: ../src/main.cc'
+' '
+'Building target: Final.elf'
+'Invoking: ARM v7 g++ linker'
+arm-none-eabi-g++ -mcpu=cortex-a9 -mfpu=vfpv3 -mfloat-abi=hard -Wl,-build-id=none -specs=Xilinx.spec -Wl,-T -Wl,../src/lscript.ld -L../../Final_bsp/ps7_cortexa9_0/lib -o "Final.elf"  ./src/main.o   -Wl,--start-group,-lxil,-lgcc,-lc,-lstdc++,--end-group
+'Finished building target: Final.elf'
+' '
+'Invoking: ARM v7 Print Size'
+arm-none-eabi-size Final.elf  |tee "Final.elf.size"
+   text	   data	    bss	    dec	    hex	filename
+  86228	   3392	  23496	 113116	  1b9dc	Final.elf
+'Finished building: Final.elf.size'
+' '
+
+16:52:18 Build Finished (took 462ms)
+

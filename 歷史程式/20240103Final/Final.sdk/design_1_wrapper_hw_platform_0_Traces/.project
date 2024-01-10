@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>design_1_wrapper_hw_platform_0_Traces</name>
+	<comment></comment>
+	<projects>
+	</projects>
+	<buildSpec>
+	</buildSpec>
+	<natures>
+		<nature>org.eclipse.linuxtools.tmf.project.nature</nature>
+	</natures>
+	<linkedResources>
+		<link>
+			<name>Traces/Run_一月-01_16-33/PS_Trace_一月-01_16-33/PS_Trace_一月-01_16-33_</name>
+			<type>1</type>
+			<location>C:/Users/user/Desktop/SoC/Final/Final.sdk/design_1_wrapper_hw_platform_0_Traces/Traces/.bookmarks</location>
+		</link>
+		<link>
+			<name>Traces/Run_一月-01_17-47/PS_Trace_一月-01_17-47/PS_Trace_一月-01_17-47_</name>
+			<type>1</type>
+			<location>C:/Users/user/Desktop/SoC/Final/Final.sdk/design_1_wrapper_hw_platform_0_Traces/Traces/.bookmarks</location>
+		</link>
+		<link>
+			<name>Traces/Run_一月-03_16-00/PS_Trace_一月-03_16-00/PS_Trace_一月-03_16-00_</name>
+			<type>1</type>
+			<location>C:/Users/user/Desktop/SoC/Final/Final.sdk/design_1_wrapper_hw_platform_0_Traces/Traces/.bookmarks</location>
+		</link>
+		<link>
+			<name>Traces/Run_十二月-26_20-43/PS_Trace_十二月-26_20-43/PS_Trace_十二月-26_20-43_</name>
+			<type>1</type>
+			<location>C:/Users/user/Desktop/SoC/Final/Final.sdk/design_1_wrapper_hw_platform_0_Traces/Traces/.bookmarks</location>
+		</link>
+	</linkedResources>
+</projectDescription>
